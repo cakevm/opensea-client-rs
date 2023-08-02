@@ -3,10 +3,7 @@ use reqwest::{
     Client, ClientBuilder,
 };
 
-use crate::{
-    constants::FULFILL_LISTING_URL,
-    types::{FulfillListingRequest, FulfillListingResponse, OpenSeaApiError},
-};
+use crate::types::{ApiUrl, FulfillListingRequest, FulfillListingResponse, OpenSeaApiError};
 
 //. A partial implementation of the OpenSea API v2, supporting the fulfill listing endpoint.
 #[derive(Debug, Clone)]
@@ -44,7 +41,7 @@ impl OpenSeaV2Client {
     ) -> Result<FulfillListingResponse, OpenSeaApiError> {
         let res = self
             .client
-            .post(FULFILL_LISTING_URL)
+            .post(ApiUrl::Mainnet.fulfill_listing())
             .json(&req)
             .send()
             .await?

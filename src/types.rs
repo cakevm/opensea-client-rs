@@ -186,4 +186,8 @@ impl ApiUrl {
     pub fn get_offers(&self, chain: &Chain) -> String {
         format!("{}/orders/{}/seaport/offers", self.base(), chain)
     }
+
+    pub fn fulfill_listing(&self) -> String {
+        format!("{}/listings/fulfillment_data", self.base())
+    }
 }
