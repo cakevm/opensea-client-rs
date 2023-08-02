@@ -1,10 +1,12 @@
-use std::str::FromStr;
+use std::{fmt, str::FromStr};
 
 use ethers::types::{Bytes, Chain, H160, H256, U256};
 use serde::{de, Deserialize, Serialize, Serializer};
 use thiserror::Error;
 
-use super::constants::{SEAPORT_V1, SEAPORT_V4, SEAPORT_V5};
+use crate::constants::PROTOCOL_VERSION;
+
+use super::constants::{API_BASE_MAINNET, API_BASE_TESTNET, SEAPORT_V1, SEAPORT_V4, SEAPORT_V5};
 
 /// Request to fulfill a listing on OpenSea.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -155,4 +157,33 @@ where
 {
     let val = String::deserialize(deserializer)?;
     U256::from_dec_str(&val).map_err(de::Error::custom)
+}
+
+/// API endpoints
+pub enum ApiUrl {
+    Mainnet,
+    Testnet,
+}
+
+impl fmt::Display for ApiUrl {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Mainnet => write!(f, "{}/{}", API_BASE_MAINNET, PROTOCOL_VERSION),
+            Self::Testnet => write!(f, "{}/{}", API_BASE_TESTNET, PROTOCOL_VERSION),
+        }
+    }
+}
+
+impl ApiUrl {
+    pub fn base(&self) -> String {
+        self.to_string()
+    }
+
+    pub fn get_listings(&self, chain: &Chain) -> String {
+        format!("{}/orders/{}/seaport/listings", self.base(), chain)
+    }
+
+    pub fn get_offers(&self, chain: &Chain) -> String {
+        format!("{}/orders/{}/seaport/offers", self.base(), chain)
+    }
 }
