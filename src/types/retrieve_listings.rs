@@ -1,8 +1,11 @@
 use std::collections::HashMap;
+use std::fmt;
 
-use serde::{Deserialize, Serialize};
+use serde::{
+    de::{self, Visitor},
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 use serde_json::Value;
-use serde_with::serde_as;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RetrieveListingsResponse {
@@ -23,8 +26,8 @@ pub struct Order {
     pub current_price: String,
     pub maker: Account,
     pub taker: Option<Account>,
-    pub maker_fees: Vec<Fees>,
-    pub taker_fees: Vec<Fees>,
+    pub maker_fees: Vec<OrderFees>,
+    pub taker_fees: Vec<OrderFees>,
     pub side: OrderSide,
     pub order_type: OrderType,
     pub cancelled: bool,
@@ -104,14 +107,14 @@ pub struct Consideration {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Fee {
+pub struct OrderFees {
     pub account: Account,
     pub basis_points: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Account {
-    pub user: Option<String>,
+    pub user: Option<UserId>,
     pub profile_img_url: String,
     pub address: String,
     pub config: String,
@@ -214,7 +217,7 @@ pub struct Collection {
     pub instagram_username: Option<String>,
     pub wiki_url: Value,
     pub is_nsfw: bool,
-    pub fees: Fees,
+    pub fees: CollectionFees,
     pub is_rarity_enabled: bool,
     pub is_creator_fees_enforced: bool,
 }
@@ -226,9 +229,45 @@ pub struct DisplayData {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Fees {
+pub struct CollectionFees {
     pub seller_fees: HashMap<String, u64>,
     pub opensea_fees: HashMap<String, u64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct UserId(String);
+
+impl<'de> Deserialize<'de> for UserId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct IdVisitor;
+
+        impl<'de> Visitor<'de> for IdVisitor {
+            type Value = UserId;
+
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str("user ID as a number or string")
+            }
+
+            fn visit_u64<E>(self, id: u64) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(UserId(id.to_string()))
+            }
+
+            fn visit_str<E>(self, id: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(UserId(id.to_string()))
+            }
+        }
+
+        deserializer.deserialize_any(IdVisitor)
+    }
 }
 
 #[cfg(test)]
@@ -239,14 +278,30 @@ mod tests {
 
     #[test]
     fn can_deserialize_account() {
-        let res = r#"{
+        let account = r#"{
             "user": 14210173,
             "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/25.png",
             "address": "0x193d3eda0dbabd55453de814ef08a6255446c911",
             "config": ""
           }"#;
-        let res: Account = serde_json::from_str(&res).unwrap();
-        assert_eq!(res.user, Some("14210173".to_string()));
+        let account: Account = serde_json::from_str(account).unwrap();
+        assert_eq!(account.user, Some(UserId("14210173".to_string())));
+    }
+
+    #[test]
+    fn can_deserialize_fees() {
+        let fees = r#"{
+          "account": {
+            "user": 14210173,
+            "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/25.png",
+            "address": "0x193d3eda0dbabd55453de814ef08a6255446c911",
+            "config": ""
+          },
+          "basis_points": "600"
+        }"#;
+
+        let fees: OrderFees = serde_json::from_str(fees).unwrap();
+        assert_eq!(fees.account.user, Some(UserId("14210173".to_string())));
     }
 
     #[test]
