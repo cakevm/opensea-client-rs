@@ -194,9 +194,9 @@ pub struct Bundle {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Asset {
-    pub id: i64,
+    pub id: u64,
     pub token_id: String,
-    pub num_sales: i64,
+    pub num_sales: u64,
     pub background_color: Value,
     pub image_url: String,
     pub image_preview_url: String,
@@ -233,13 +233,13 @@ pub struct AssetContract {
     pub external_link: Option<String>,
     pub image_url: Option<String>,
     pub default_to_fiat: bool,
-    pub dev_buyer_fee_basis_points: i64,
-    pub dev_seller_fee_basis_points: i64,
+    pub dev_buyer_fee_basis_points: u64,
+    pub dev_seller_fee_basis_points: u64,
     pub only_proxied_transfers: bool,
-    pub opensea_buyer_fee_basis_points: i64,
-    pub opensea_seller_fee_basis_points: i64,
-    pub buyer_fee_basis_points: i64,
-    pub seller_fee_basis_points: i64,
+    pub opensea_buyer_fee_basis_points: u64,
+    pub opensea_seller_fee_basis_points: u64,
+    pub buyer_fee_basis_points: u64,
+    pub seller_fee_basis_points: u64,
     pub payout_address: Option<String>,
 }
 
@@ -266,7 +266,7 @@ pub struct Collection {
     pub name: String,
     pub only_proxied_transfers: bool,
     pub opensea_buyer_fee_basis_points: String,
-    pub opensea_seller_fee_basis_points: i64,
+    pub opensea_seller_fee_basis_points: u64,
     pub payout_address: Option<String>,
     pub require_email: bool,
     pub short_description: Value,
