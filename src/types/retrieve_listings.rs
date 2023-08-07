@@ -3,7 +3,7 @@ use std::fmt;
 
 use serde::{
     de::{self, Visitor},
-    Deserialize, Deserializer, Serialize, Serializer,
+    Deserialize, Deserializer, Serialize,
 };
 use serde_json::Value;
 
@@ -166,11 +166,11 @@ pub struct AssetContract {
     pub name: String,
     pub nft_version: Value,
     pub opensea_version: Option<String>,
-    pub owner: i64,
+    pub owner: Option<u64>,
     pub schema_name: String,
     pub symbol: String,
-    pub total_supply: String,
-    pub description: String,
+    pub total_supply: Option<String>,
+    pub description: Option<String>,
     pub external_link: Option<String>,
     pub image_url: Option<String>,
     pub default_to_fiat: bool,
@@ -187,22 +187,22 @@ pub struct AssetContract {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Collection {
     pub banner_image_url: Option<String>,
-    pub chat_url: Value,
+    pub chat_url: Option<String>,
     pub created_date: String,
     pub default_to_fiat: bool,
-    pub description: String,
+    pub description: Option<String>,
     pub dev_buyer_fee_basis_points: String,
     pub dev_seller_fee_basis_points: String,
     pub discord_url: Option<String>,
-    pub display_data: DisplayData,
+    pub display_data: Value,
     pub external_url: Option<String>,
     pub featured: bool,
-    pub featured_image_url: String,
+    pub featured_image_url: Option<String>,
     pub hidden: bool,
     pub safelist_request_status: String,
-    pub image_url: String,
+    pub image_url: Option<String>,
     pub is_subject_to_whitelist: bool,
-    pub large_image_url: String,
+    pub large_image_url: Option<String>,
     pub medium_username: Option<String>,
     pub name: String,
     pub only_proxied_transfers: bool,
@@ -220,12 +220,6 @@ pub struct Collection {
     pub fees: CollectionFees,
     pub is_rarity_enabled: bool,
     pub is_creator_fees_enforced: bool,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct DisplayData {
-    pub card_display_style: String,
-    pub images: Value,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
