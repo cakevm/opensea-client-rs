@@ -1,14 +1,35 @@
-pub mod retrieve_listings;
+pub mod orders;
 
-use std::{fmt, str::FromStr};
+use std::{collections::HashMap, fmt, str::FromStr};
 
 use ethers::types::{Bytes, Chain, H160, H256, U256};
-use serde::{de, Deserialize, Serialize, Serializer};
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde_json::Value;
 use thiserror::Error;
 
 use crate::constants::PROTOCOL_VERSION;
 
+use self::orders::Order;
+
 use super::constants::{API_BASE_MAINNET, API_BASE_TESTNET, SEAPORT_V1, SEAPORT_V4, SEAPORT_V5};
+
+/// Response from OpenSea retrieve listings endpoint containing a list of orders, along with
+/// optional pagination information.
+///
+/// Properties:
+///
+/// * `next`: An optional string that represents the cursor of the next page of listings. If there is no
+/// next page, this field will be None.
+/// * `previous`: The `previous` property is an optional string that represents the cursor of the previous
+/// page of listings. If there is no previous page, the value will be `None`.
+/// * `orders`: The `orders` property is a vector (or array) of `Order` structs. It represents a list of
+/// orders.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RetrieveListingsResponse {
+    pub next: Option<String>,
+    pub previous: Option<String>,
+    pub orders: Vec<Order>,
+}
 
 /// Request to fulfill a listing on OpenSea.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -191,5 +212,186 @@ impl ApiUrl {
 
     pub fn fulfill_listing(&self) -> String {
         format!("{}/listings/fulfillment_data", self.base())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Account {
+    pub user: Option<UserId>,
+    pub profile_img_url: String,
+    pub address: String,
+    pub config: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct UserId(String);
+
+impl<'de> Deserialize<'de> for UserId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct IdVisitor;
+
+        impl<'de> de::Visitor<'de> for IdVisitor {
+            type Value = UserId;
+
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str("user ID as a number or string")
+            }
+
+            fn visit_u64<E>(self, id: u64) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(UserId(id.to_string()))
+            }
+
+            fn visit_str<E>(self, id: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(UserId(id.to_string()))
+            }
+        }
+
+        deserializer.deserialize_any(IdVisitor)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Collection {
+    pub banner_image_url: Option<String>,
+    pub chat_url: Option<String>,
+    pub created_date: String,
+    pub default_to_fiat: bool,
+    pub description: Option<String>,
+    pub dev_buyer_fee_basis_points: String,
+    pub dev_seller_fee_basis_points: String,
+    pub discord_url: Option<String>,
+    pub display_data: Value,
+    pub external_url: Option<String>,
+    pub featured: bool,
+    pub featured_image_url: Option<String>,
+    pub hidden: bool,
+    pub safelist_request_status: String,
+    pub image_url: Option<String>,
+    pub is_subject_to_whitelist: bool,
+    pub large_image_url: Option<String>,
+    pub medium_username: Option<String>,
+    pub name: String,
+    pub only_proxied_transfers: bool,
+    pub opensea_buyer_fee_basis_points: String,
+    pub opensea_seller_fee_basis_points: u64,
+    pub payout_address: Option<String>,
+    pub require_email: bool,
+    pub short_description: Value,
+    pub slug: String,
+    pub telegram_url: Value,
+    pub twitter_username: Option<String>,
+    pub instagram_username: Option<String>,
+    pub wiki_url: Value,
+    pub is_nsfw: bool,
+    pub fees: CollectionFees,
+    pub is_rarity_enabled: bool,
+    pub is_creator_fees_enforced: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CollectionFees {
+    pub seller_fees: HashMap<String, u64>,
+    pub opensea_fees: HashMap<String, u64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Asset {
+    pub id: u64,
+    pub token_id: String,
+    pub num_sales: u64,
+    pub background_color: Value,
+    pub image_url: String,
+    pub image_preview_url: String,
+    pub image_thumbnail_url: String,
+    pub image_original_url: Option<String>,
+    pub animation_url: Value,
+    pub animation_original_url: Value,
+    pub name: String,
+    pub description: Option<String>,
+    pub external_link: Option<String>,
+    pub asset_contract: AssetContract,
+    pub permalink: String,
+    pub collection: Collection,
+    pub decimals: Value,
+    pub token_metadata: Option<String>,
+    pub is_nsfw: bool,
+    pub owner: Value,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AssetContract {
+    pub address: String,
+    pub asset_contract_type: String,
+    pub chain_identifier: String,
+    pub created_date: String,
+    pub name: String,
+    pub nft_version: Value,
+    pub opensea_version: Option<String>,
+    pub owner: Option<u64>,
+    pub schema_name: String,
+    pub symbol: String,
+    pub total_supply: Option<String>,
+    pub description: Option<String>,
+    pub external_link: Option<String>,
+    pub image_url: Option<String>,
+    pub default_to_fiat: bool,
+    pub dev_buyer_fee_basis_points: u64,
+    pub dev_seller_fee_basis_points: u64,
+    pub only_proxied_transfers: bool,
+    pub opensea_buyer_fee_basis_points: u64,
+    pub opensea_seller_fee_basis_points: u64,
+    pub buyer_fee_basis_points: u64,
+    pub seller_fee_basis_points: u64,
+    pub payout_address: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Bundle {
+    pub assets: Vec<Asset>,
+    pub maker: Value,
+    pub slug: Option<String>,
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub external_link: Option<String>,
+    pub asset_contract: Value,
+    pub permalink: Option<String>,
+    pub seaport_sell_orders: Value,
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::*;
+
+    #[test]
+    fn can_deserialize_account() {
+        let account = r#"{
+            "user": 14210173,
+            "profile_img_url": "https://storage.googleapis.com/opensea-static/opensea-profile/25.png",
+            "address": "0x193d3eda0dbabd55453de814ef08a6255446c911",
+            "config": ""
+          }"#;
+        let account: Account = serde_json::from_str(account).unwrap();
+        assert_eq!(account.user, Some(UserId("14210173".to_string())));
+    }
+
+    #[test]
+    fn can_deserialize_response() {
+        let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        d.push("resources/response_get_listings.json");
+        println!("{}", d.display());
+        let res = std::fs::read_to_string(d).unwrap();
+        let res: RetrieveListingsResponse = serde_json::from_str(&res).unwrap();
+        assert_eq!(res.next, Some("LXBrPTExNTE5Njk3NjYw".to_string()));
     }
 }
