@@ -1,6 +1,6 @@
 # opensea V2
 
-Partial Rust bindings for the Opensea V2 API, supporting the [fulfill listing endpoint](https://docs.opensea.io/reference/fulfill-a-listing). This endpoint is useful for taker stragegies, as it provides the arguments necessary to fulfill orders onchain. 
+An unofficial implementation of the Opensea V2 API in rust
 
 ## Usage
 

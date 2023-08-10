@@ -3,7 +3,10 @@ use reqwest::{
     Client, ClientBuilder,
 };
 
-use crate::types::{ApiUrl, FulfillListingRequest, FulfillListingResponse, OpenSeaApiError};
+use crate::types::{
+    ApiUrl, FulfillListingRequest, FulfillListingResponse, OpenSeaApiError,
+    RetrieveListingsRequest, RetrieveListingsResponse,
+};
 
 //. A partial implementation of the OpenSea API v2, supporting the fulfill listing endpoint.
 #[derive(Debug, Clone)]
@@ -31,6 +34,13 @@ impl OpenSeaV2Client {
         let client = builder.build().unwrap();
 
         Self { client }
+    }
+
+    pub async fn retrieve_listings(
+        &self,
+        req: RetrieveListingsRequest,
+    ) -> Result<RetrieveListingsResponse, OpenSeaApiError> {
+        todo!()
     }
 
     /// Call the fulfill listing endpoint, which returns the arguments necessary

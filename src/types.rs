@@ -2,6 +2,7 @@ pub mod orders;
 
 use std::{collections::HashMap, fmt, str::FromStr};
 
+use chrono::{DateTime, Utc};
 use ethers::types::{Bytes, Chain, H160, H256, U256};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
@@ -12,6 +13,32 @@ use crate::constants::PROTOCOL_VERSION;
 use self::orders::Order;
 
 use super::constants::{API_BASE_MAINNET, API_BASE_TESTNET, SEAPORT_V1, SEAPORT_V4, SEAPORT_V5};
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RetrieveListingsRequest {
+    /// Address of the contract for an NFT
+    pub asset_contract_address: Option<String>,
+    /// Number of listings to retrieve
+    pub limit: Option<u8>,
+    /// An array of token IDs to search for (e.g. ?token_ids=1&token_ids=209).
+    /// This endpoint will return a list of listings with token_id matching any of the IDs in this array.
+    pub token_ids: Vec<String>,
+    /// Filter by the order makers wallet address
+    pub maker: Option<String>,
+    /// Filter by the order takers wallet address
+    pub taker: Option<String>,
+    /// How to sort the orders. Can be created_date for when they were made,
+    /// or eth_price to see the lowest-priced orders first (converted to their ETH values).
+    /// eth_price is only supported when asset_contract_address and token_id are also defined.
+    pub order_by: Option<String>,
+    /// Can be asc or desc for ascending or descending sort. For example, to see the cheapest orders,
+    /// do order_direction asc and order_by eth_price.
+    pub order_direction: Option<String>,
+    /// Only show orders listed after this timestamp. Seconds since the Unix epoch.
+    pub listed_after: Option<DateTime<Utc>>,
+    /// Only show orders listed before this timestamp. Seconds since the Unix epoch.
+    pub listed_before: Option<DateTime<Utc>>,
+}
 
 /// Response from OpenSea retrieve listings endpoint containing a list of orders, along with
 /// optional pagination information.

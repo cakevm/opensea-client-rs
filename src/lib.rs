@@ -4,7 +4,7 @@
     no_crate_inject,
     attr(deny(warnings, rust_2018_idioms), allow(dead_code, unused_variables))
 ))]
-//! A unofficial implementation of the Opensea V2 API in rust
+//! An unofficial implementation of the Opensea V2 API in rust
 
 /// This module contains the core client implementation.
 pub mod client;
