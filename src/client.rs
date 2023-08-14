@@ -4,8 +4,11 @@ use reqwest::{
 };
 
 use crate::types::{
-    ApiUrl, FulfillListingRequest, FulfillListingResponse, OpenSeaApiError,
-    RetrieveListingsRequest, RetrieveListingsResponse,
+    api::{
+        FulfillListingRequest, FulfillListingResponse, OpenSeaApiError, RetrieveListingsRequest,
+        RetrieveListingsResponse,
+    },
+    ApiUrl,
 };
 
 //. A partial implementation of the OpenSea API v2, supporting the fulfill listing endpoint.

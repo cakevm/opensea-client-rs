@@ -153,7 +153,7 @@ pub struct Offer {
 #[cfg(test)]
 mod tests {
 
-    use crate::types::UserId;
+    use crate::types::api::UserId;
 
     use super::*;
 
