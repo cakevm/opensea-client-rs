@@ -5,7 +5,8 @@ use std::{collections::HashMap, fmt, str::FromStr};
 use chrono::{DateTime, Utc};
 use ethers::types::{Bytes, Chain, H160, H256, U256};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use serde_json::Value;
+use serde_json::{Map, Value};
+use serde_with::{serde_as, skip_serializing_none, TimestampSeconds};
 use thiserror::Error;
 
 use crate::constants::PROTOCOL_VERSION;
@@ -14,19 +15,21 @@ use self::orders::Order;
 
 use super::constants::{API_BASE_MAINNET, API_BASE_TESTNET, SEAPORT_V1, SEAPORT_V4, SEAPORT_V5};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde_as]
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct RetrieveListingsRequest {
     /// Address of the contract for an NFT
-    pub asset_contract_address: Option<String>,
+    pub asset_contract_address: Option<H160>,
     /// Number of listings to retrieve
     pub limit: Option<u8>,
     /// An array of token IDs to search for (e.g. ?token_ids=1&token_ids=209).
     /// This endpoint will return a list of listings with token_id matching any of the IDs in this array.
     pub token_ids: Vec<String>,
     /// Filter by the order makers wallet address
-    pub maker: Option<String>,
+    pub maker: Option<H160>,
     /// Filter by the order takers wallet address
-    pub taker: Option<String>,
+    pub taker: Option<H160>,
     /// How to sort the orders. Can be created_date for when they were made,
     /// or eth_price to see the lowest-priced orders first (converted to their ETH values).
     /// eth_price is only supported when asset_contract_address and token_id are also defined.
@@ -35,9 +38,49 @@ pub struct RetrieveListingsRequest {
     /// do order_direction asc and order_by eth_price.
     pub order_direction: Option<String>,
     /// Only show orders listed after this timestamp. Seconds since the Unix epoch.
+    #[serde_as(as = "Option<TimestampSeconds<i64>>")]
     pub listed_after: Option<DateTime<Utc>>,
     /// Only show orders listed before this timestamp. Seconds since the Unix epoch.
+    #[serde_as(as = "Option<TimestampSeconds<i64>>")]
     pub listed_before: Option<DateTime<Utc>>,
+}
+
+fn value_to_string(v: &Value) -> Result<String, Box<dyn std::error::Error>> {
+    match v {
+        Value::Number(n) => Ok(n.to_string()),
+        Value::Bool(b) => Ok(b.to_string()),
+        Value::String(s) => Ok(s.to_owned()),
+        _ => Err(Box::from(format!("Can not convert value: '{v}' to String"))),
+    }
+}
+
+impl RetrieveListingsRequest {
+    /// Converts RetrieveListingsRequest into serde_json::Map<String, serde_json::Value>
+    pub fn to_map(&self) -> serde_json::Result<Map<String, Value>> {
+        Ok(serde_json::to_value(self)?
+            .as_object()
+            .expect("This should never happen")
+            .to_owned())
+    }
+
+    /// Converts RetrieveListingsRequest into a vector of key-value pairs
+    /// OpenSea API expects arrays to be passed as a sequence of parameters with the same key (e.g. ?token_ids=1&token_ids=209)
+    /// https://github.com/ProjectOpenSea/opensea-js/blob/893866a7381ec455814be2ac9943d45ee38da58f/src/api/api.ts#L673C11-L673C31
+    pub fn to_qs_vec(&self) -> Result<Vec<(String, String)>, Box<dyn std::error::Error>> {
+        let map = self.to_map()?;
+        let mut vec = Vec::new();
+        for (k, v) in map.iter() {
+            match v {
+                Value::Array(arr) => {
+                    for v in arr {
+                        vec.push((k.clone(), value_to_string(v)?))
+                    }
+                }
+                _ => vec.push((k.clone(), value_to_string(v)?)),
+            }
+        }
+        Ok(vec)
+    }
 }
 
 /// Response from OpenSea retrieve listings endpoint containing a list of orders, along with
@@ -396,9 +439,9 @@ pub struct Bundle {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-
     use super::*;
+    use chrono::TimeZone;
+    use std::path::PathBuf;
 
     #[test]
     fn can_deserialize_account() {
@@ -420,5 +463,25 @@ mod tests {
         let res = std::fs::read_to_string(d).unwrap();
         let res: RetrieveListingsResponse = serde_json::from_str(&res).unwrap();
         assert_eq!(res.next, Some("LXBrPTExNTE5Njk3NjYw".to_string()));
+    }
+
+    #[test]
+    fn can_convert_retrieve_listing_request_to_qs() {
+        let req = RetrieveListingsRequest {
+            asset_contract_address: "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D".parse().ok(),
+            token_ids: vec!["1".to_string(), "2".to_string(), "3".to_string()],
+            listed_after: Some(Utc.timestamp_opt(1691681235, 0).unwrap()),
+            ..Default::default()
+        };
+
+        let client = reqwest::Client::new();
+        let qs = req.to_qs_vec().unwrap();
+        let req_builder = client.get("https://example.com").query(&qs);
+
+        let request = req_builder.build().unwrap();
+        assert_eq!(
+            request.url().query().unwrap(),
+            "asset_contract_address=0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d&token_ids=1&token_ids=2&token_ids=3&listed_after=1691681235"
+        );
     }
 }
