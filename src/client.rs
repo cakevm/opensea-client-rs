@@ -3,12 +3,15 @@ use reqwest::{
     Client, ClientBuilder,
 };
 
-use crate::types::{
-    api::{
-        FulfillListingRequest, FulfillListingResponse, OpenSeaApiError, RetrieveListingsRequest,
-        RetrieveListingsResponse,
+use crate::{
+    constants::{API_BASE_MAINNET, API_BASE_TESTNET},
+    types::{
+        api::{
+            FulfillListingRequest, FulfillListingResponse, OpenSeaApiError,
+            RetrieveListingsRequest, RetrieveListingsResponse,
+        },
+        ApiUrl, Chain,
     },
-    ApiUrl, Chain,
 };
 
 //. A partial implementation of the OpenSea API v2, supporting the fulfill listing endpoint.
@@ -39,10 +42,18 @@ impl OpenSeaV2Client {
         builder = builder.default_headers(headers);
         let client = builder.build().unwrap();
 
+        let base_url = if cfg.chain.is_test_chain() {
+            API_BASE_TESTNET
+        } else {
+            API_BASE_MAINNET
+        };
+
         Self {
             client,
             chain: cfg.chain,
-            url: ApiUrl::Mainnet,
+            url: ApiUrl {
+                base: base_url.to_string(),
+            },
         }
     }
 
