@@ -89,6 +89,11 @@ impl Chain {
                 | ZoraTestnet
         )
     }
+
+    #[inline]
+    pub fn is_live_chain(&self) -> bool {
+        !self.is_test_chain()
+    }
 }
 
 #[cfg(test)]

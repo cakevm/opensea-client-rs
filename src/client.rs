@@ -33,20 +33,22 @@ impl OpenSeaV2Client {
     /// Create a new client with the given configuration.
     pub fn new(cfg: OpenSeaApiConfig) -> Self {
         let mut builder = ClientBuilder::new();
-
         let mut headers = HeaderMap::new();
-        headers.insert(
-            "X-API-KEY",
-            header::HeaderValue::from_str(&cfg.api_key).unwrap(),
-        );
+        let base_url;
+
+        if cfg.chain.is_live_chain() {
+            headers.insert(
+                "X-API-KEY",
+                header::HeaderValue::from_str(&cfg.api_key).unwrap(),
+            );
+
+            base_url = API_BASE_MAINNET;
+        } else {
+            base_url = API_BASE_TESTNET;
+        }
+
         builder = builder.default_headers(headers);
         let client = builder.build().unwrap();
-
-        let base_url = if cfg.chain.is_test_chain() {
-            API_BASE_TESTNET
-        } else {
-            API_BASE_MAINNET
-        };
 
         Self {
             client,
