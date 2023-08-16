@@ -58,7 +58,6 @@ impl OpenSeaV2Client {
             .await?
             .json::<RetrieveListingsResponse>()
             .await?;
-
         Ok(res)
     }
 

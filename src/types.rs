@@ -40,6 +40,8 @@ impl ApiUrl {
     }
 }
 
+/// Each of the possible chains that OpenSea supports.
+/// https://github.com/ProjectOpenSea/opensea-js/blob/813b9189221024f3761e622bb418264f002fcce5/src/types.ts#L98
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, EnumString, AsRefStr, Default)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
@@ -63,6 +65,7 @@ pub enum Chain {
     Zora,
 
     // Testnet Chains
+    // When adding to this list, also add to the is_test_chain method
     Goerli,
     Sepolia,
     Mumbai,
@@ -81,6 +84,26 @@ pub enum Chain {
 impl fmt::Display for Chain {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad(self.as_ref())
+    }
+}
+
+impl Chain {
+    fn is_test_chain(&self) -> bool {
+        use Chain::*;
+        matches!(
+            self,
+            Goerli
+                | Sepolia
+                | Mumbai
+                | Boabab
+                | BaseGoerli
+                | BSCTestnet
+                | ArbitrumGoerli
+                | AvalancheFuji
+                | OptimismGoerli
+                | SolanaDevnet
+                | ZoraTestnet
+        )
     }
 }
 
