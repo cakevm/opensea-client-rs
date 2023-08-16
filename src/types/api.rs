@@ -446,4 +446,21 @@ pub(crate) mod tests {
             "asset_contract_address=0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d&token_ids=1&token_ids=2&token_ids=3&listed_after=1691681235"
         );
     }
+
+    #[test]
+    fn can_serialize_fulfill_listing_request() {
+        let req = FulfillListingRequest {
+            fulfiller: Fulfiller {
+                address: H160::from_str("0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D").unwrap(),
+            },
+            listing: Listing {
+                hash: H256::default(),
+                chain: Chain::Mainnet,
+                protocol_version: ProtocolVersion::V1_5,
+            },
+        };
+
+        let req_val = serde_json::to_value(&req).unwrap();
+        dbg!(req_val);
+    }
 }
