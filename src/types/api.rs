@@ -2,13 +2,15 @@ pub mod orders;
 
 use crate::constants::{SEAPORT_V1, SEAPORT_V4, SEAPORT_V5};
 use chrono::{DateTime, Utc};
-use ethers::types::{Bytes, Chain, H160, H256, U256};
+use ethers::types::{Bytes, H160, H256, U256};
 use orders::Order;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{Map, Value};
 use serde_with::{serde_as, skip_serializing_none, TimestampSeconds};
 use std::{collections::HashMap, fmt, str::FromStr};
 use thiserror::Error;
+
+use super::Chain;
 
 #[serde_as]
 #[skip_serializing_none]
@@ -107,7 +109,6 @@ pub struct FulfillListingRequest {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Listing {
     pub hash: H256,
-    #[serde(serialize_with = "chain_to_str")]
     pub chain: Chain,
     #[serde(
         rename = "protocol_address",
@@ -205,15 +206,6 @@ pub struct AdditionalRecipient {
 pub enum OpenSeaApiError {
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
-}
-
-/// Helper function to convert a chain to a string.
-pub(crate) fn chain_to_str<S: Serializer>(chain: &Chain, serializer: S) -> Result<S::Ok, S::Error> {
-    let chain_str = match chain {
-        Chain::Mainnet => "ethereum",
-        _ => Err(serde::ser::Error::custom("Unsupported chain"))?,
-    };
-    serializer.serialize_str(chain_str)
 }
 
 /// Helper function to convert a protocol version to a string.
@@ -403,6 +395,7 @@ pub struct Bundle {
 pub(crate) mod tests {
     use super::*;
     use chrono::TimeZone;
+    use serde_json::json;
     use std::path::PathBuf;
 
     #[test]
@@ -455,12 +448,22 @@ pub(crate) mod tests {
             },
             listing: Listing {
                 hash: H256::default(),
-                chain: Chain::Mainnet,
+                chain: Chain::Ethereum,
                 protocol_version: ProtocolVersion::V1_5,
             },
         };
 
         let req_val = serde_json::to_value(&req).unwrap();
-        dbg!(req_val);
+        assert_eq!(
+            req_val,
+            json!({
+                "fulfiller": {"address": "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d"},
+                "listing": {
+                    "hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                    "chain": "ethereum",
+                    "protocol_address": SEAPORT_V5
+                }
+            })
+        );
     }
 }
