@@ -50,7 +50,16 @@ impl OpenSeaV2Client {
         &self,
         req: RetrieveListingsRequest,
     ) -> Result<RetrieveListingsResponse, OpenSeaApiError> {
-        todo!()
+        let res = self
+            .client
+            .get(self.url.get_listings(&self.chain))
+            .query(&req)
+            .send()
+            .await?
+            .json::<RetrieveListingsResponse>()
+            .await?;
+
+        Ok(res)
     }
 
     /// Call the fulfill listing endpoint, which returns the arguments necessary
