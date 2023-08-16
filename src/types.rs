@@ -7,6 +7,7 @@ use std::fmt;
 use strum::{AsRefStr, EnumString};
 
 /// API endpoints
+#[derive(Debug, Clone)]
 pub enum ApiUrl {
     Mainnet,
     Testnet,
@@ -39,7 +40,7 @@ impl ApiUrl {
     }
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize, EnumString, AsRefStr, Default)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, EnumString, AsRefStr, Default)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum Chain {

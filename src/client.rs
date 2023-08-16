@@ -8,19 +8,22 @@ use crate::types::{
         FulfillListingRequest, FulfillListingResponse, OpenSeaApiError, RetrieveListingsRequest,
         RetrieveListingsResponse,
     },
-    ApiUrl,
+    ApiUrl, Chain,
 };
 
 //. A partial implementation of the OpenSea API v2, supporting the fulfill listing endpoint.
 #[derive(Debug, Clone)]
 pub struct OpenSeaV2Client {
     client: Client,
+    chain: Chain,
+    url: ApiUrl,
 }
 
 /// Configuration for the OpenSea API client.
 #[derive(Debug, Clone)]
 pub struct OpenSeaApiConfig {
     pub api_key: String,
+    pub chain: Chain,
 }
 
 impl OpenSeaV2Client {
@@ -36,7 +39,11 @@ impl OpenSeaV2Client {
         builder = builder.default_headers(headers);
         let client = builder.build().unwrap();
 
-        Self { client }
+        Self {
+            client,
+            chain: cfg.chain,
+            url: ApiUrl::Mainnet,
+        }
     }
 
     pub async fn retrieve_listings(
@@ -54,7 +61,7 @@ impl OpenSeaV2Client {
     ) -> Result<FulfillListingResponse, OpenSeaApiError> {
         let res = self
             .client
-            .post(ApiUrl::Mainnet.fulfill_listing())
+            .post(self.url.fulfill_listing())
             .json(&req)
             .send()
             .await?
