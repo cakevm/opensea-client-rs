@@ -23,9 +23,9 @@ pub struct OpenSeaV2Client {
 }
 
 /// Configuration for the OpenSea API client.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct OpenSeaApiConfig {
-    pub api_key: String,
+    pub api_key: Option<String>,
     pub chain: Chain,
 }
 
@@ -34,21 +34,19 @@ impl OpenSeaV2Client {
     pub fn new(cfg: OpenSeaApiConfig) -> Self {
         let mut builder = ClientBuilder::new();
         let mut headers = HeaderMap::new();
-        let base_url;
 
-        if cfg.chain.is_live_chain() {
-            headers.insert(
-                "X-API-KEY",
-                header::HeaderValue::from_str(&cfg.api_key).unwrap(),
-            );
-
-            base_url = API_BASE_MAINNET;
-        } else {
-            base_url = API_BASE_TESTNET;
+        if let Some(ref api_key) = cfg.api_key {
+            headers.insert("X-API-KEY", header::HeaderValue::from_str(api_key).unwrap());
         }
 
         builder = builder.default_headers(headers);
         let client = builder.build().unwrap();
+
+        let base_url = if cfg.chain.is_test_chain() {
+            API_BASE_TESTNET
+        } else {
+            API_BASE_MAINNET
+        };
 
         Self {
             client,

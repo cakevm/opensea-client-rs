@@ -14,3 +14,5 @@ mod constants;
 
 /// This module contains the core type definitions for the client.
 pub mod types;
+
+pub use client::{OpenSeaApiConfig, OpenSeaV2Client};
