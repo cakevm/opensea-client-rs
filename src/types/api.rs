@@ -315,12 +315,12 @@ pub struct Collection {
     pub opensea_seller_fee_basis_points: u64,
     pub payout_address: Option<String>,
     pub require_email: bool,
-    pub short_description: Value,
+    pub short_description: Option<String>,
     pub slug: String,
-    pub telegram_url: Value,
+    pub telegram_url: Option<String>,
     pub twitter_username: Option<String>,
     pub instagram_username: Option<String>,
-    pub wiki_url: Value,
+    pub wiki_url: Option<String>,
     pub is_nsfw: bool,
     pub fees: CollectionFees,
     pub is_rarity_enabled: bool,
@@ -338,22 +338,23 @@ pub struct Asset {
     pub id: u64,
     pub token_id: String,
     pub num_sales: u64,
-    pub background_color: Value,
+    pub background_color: Option<String>,
     pub image_url: String,
     pub image_preview_url: String,
     pub image_thumbnail_url: String,
     pub image_original_url: Option<String>,
-    pub animation_url: Value,
-    pub animation_original_url: Value,
+    pub animation_url: Option<String>,
+    pub animation_original_url: Option<String>,
     pub name: String,
     pub description: Option<String>,
     pub external_link: Option<String>,
     pub asset_contract: AssetContract,
     pub permalink: String,
     pub collection: Collection,
-    pub decimals: Value,
+    pub decimals: Option<u64>,
     pub token_metadata: Option<String>,
     pub is_nsfw: bool,
+    //XXX not documented
     pub owner: Value,
 }
 
@@ -364,7 +365,7 @@ pub struct AssetContract {
     pub chain_identifier: String,
     pub created_date: String,
     pub name: String,
-    pub nft_version: Value,
+    pub nft_version: Option<String>,
     pub opensea_version: Option<String>,
     pub owner: Option<u64>,
     pub schema_name: String,
@@ -392,7 +393,7 @@ pub struct Bundle {
     pub name: Option<String>,
     pub description: Option<String>,
     pub external_link: Option<String>,
-    pub asset_contract: Value,
+    pub asset_contract: Option<AssetContract>,
     pub permalink: Option<String>,
     pub seaport_sell_orders: Value,
 }
@@ -424,6 +425,17 @@ pub(crate) mod tests {
         let res = std::fs::read_to_string(d).unwrap();
         let res: RetrieveListingsResponse = serde_json::from_str(&res).unwrap();
         assert_eq!(res.next, Some("LXBrPTExNTE5Njk3NjYw".to_string()));
+    }
+
+    #[test]
+    #[ignore = "Inconsistency between mainnet and testnet structures"]
+    fn can_deserialize_test_response() {
+        let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        d.push("resources/testnet_response_get_listings.json");
+        println!("{}", d.display());
+        let res = std::fs::read_to_string(d).unwrap();
+        let res: RetrieveListingsResponse = serde_json::from_str(&res).unwrap();
+        assert_eq!(res.next, Some("LXBrPTEyNDkyNTQ=".to_string()));
     }
 
     #[test]

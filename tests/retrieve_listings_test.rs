@@ -1,5 +1,8 @@
 use opensea_v2::{
-    types::{api::RetrieveListingsRequest, Chain},
+    types::{
+        api::{OrderOpeningOption, RetrieveListingsRequest},
+        Chain,
+    },
     OpenSeaApiConfig, OpenSeaV2Client,
 };
 
@@ -26,6 +29,7 @@ async fn can_retrieve_listing() {
 
     let req = RetrieveListingsRequest {
         limit: Some(3),
+        order_by: Some(OrderOpeningOption::CreatedDate),
         ..Default::default()
     };
 
