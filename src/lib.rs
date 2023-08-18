@@ -4,10 +4,7 @@
     no_crate_inject,
     attr(deny(warnings, rust_2018_idioms), allow(dead_code, unused_variables))
 ))]
-//! A partial implementation of the Opensea V2 API, supporting the
-//! [fulfill listing endpoint](https://docs.opensea.io/reference/fulfill-a-listing).
-//! This endpoint is useful for taker stragegies, as it provides the arguments
-//! necessary to fulfill orders onchain.
+//! An unofficial implementation of the Opensea V2 API in rust
 
 /// This module contains the core client implementation.
 pub mod client;
@@ -17,3 +14,11 @@ mod constants;
 
 /// This module contains the core type definitions for the client.
 pub mod types;
+
+pub use client::{OpenSeaApiConfig, OpenSeaV2Client};
+
+//XXX Suppress false positive unused_crate_dependencies warning
+#[cfg(test)]
+mod test {
+    use tokio as _;
+}

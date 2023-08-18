@@ -1,158 +1,158 @@
-use std::str::FromStr;
+pub mod api;
 
-use ethers::types::{Bytes, Chain, H160, H256, U256};
-use serde::{de, Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
+use std::fmt;
+use strum::{AsRefStr, EnumString};
 use thiserror::Error;
-
-use super::constants::{SEAPORT_V1, SEAPORT_V4, SEAPORT_V5};
-
-/// Request to fulfill a listing on OpenSea.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct FulfillListingRequest {
-    pub listing: Listing,
-    pub fulfiller: Fulfiller,
-}
-
-/// Listing we want to fulfill on OpenSea.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Listing {
-    pub hash: H256,
-    #[serde(serialize_with = "chain_to_str")]
-    pub chain: Chain,
-    #[serde(
-        rename = "protocol_address",
-        serialize_with = "protocol_version_to_str"
-    )]
-    pub protocol_version: ProtocolVersion,
-}
-
-/// Address which will fulfill the listing.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Fulfiller {
-    pub address: H160,
-}
-
-/// Response from OpenSea fulfill listing endpoint.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct FulfillListingResponse {
-    pub protocol: String,
-    pub fulfillment_data: FulfillmentData,
-}
-
-/// Protocol version for the listing.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum ProtocolVersion {
-    V1_1,
-    V1_4,
-    V1_5,
-}
-
-/// Information needed to fulfill the listing.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct FulfillmentData {
-    pub transaction: Transaction,
-}
-
-/// Transaction data for onchain fulfillment.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Transaction {
-    pub function: String,
-    pub chain: u64,
-    pub to: String,
-    pub value: u64,
-    pub input_data: InputData,
-}
-
-/// Additional input data for the transaction.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct InputData {
-    pub parameters: Parameters,
-}
-
-/// Parameters for onchain transaction fulfillment.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Parameters {
-    pub consideration_token: H160,
-    #[serde(deserialize_with = "u256_from_dec_str")]
-    pub consideration_identifier: U256,
-    #[serde(deserialize_with = "u256_from_dec_str")]
-    pub consideration_amount: U256,
-    pub offerer: H160,
-    pub zone: H160,
-    pub offer_token: H160,
-    #[serde(deserialize_with = "u256_from_dec_str")]
-    pub offer_identifier: U256,
-    #[serde(deserialize_with = "u256_from_dec_str")]
-    pub offer_amount: U256,
-    pub basic_order_type: u8,
-    #[serde(deserialize_with = "u256_from_dec_str")]
-    pub start_time: U256,
-    #[serde(deserialize_with = "u256_from_dec_str")]
-    pub end_time: U256,
-    pub zone_hash: H256,
-    #[serde(deserialize_with = "u256_from_dec_str")]
-    pub salt: U256,
-    pub offerer_conduit_key: H256,
-    pub fulfiller_conduit_key: H256,
-    #[serde(deserialize_with = "u256_from_dec_str")]
-    pub total_original_additional_recipients: U256,
-    pub additional_recipients: Vec<AdditionalRecipient>,
-    #[serde(deserialize_with = "bytes_from_str")]
-    pub signature: Bytes,
-}
-
-/// Additional recipient for onchain transaction fulfillment.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct AdditionalRecipient {
-    #[serde(deserialize_with = "u256_from_dec_str")]
-    pub amount: U256,
-    pub recipient: H160,
-}
 
 /// Error returned by the OpenSea API.
 #[derive(Debug, Error)]
 pub enum OpenSeaApiError {
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
+    #[error(transparent)]
+    SerdeJson(#[from] serde_json::Error),
+    #[error("{0}")]
+    Other(String),
 }
 
-/// Helper function to convert a chain to a string.
-fn chain_to_str<S: Serializer>(chain: &Chain, serializer: S) -> Result<S::Ok, S::Error> {
-    let chain_str = match chain {
-        Chain::Mainnet => "ethereum",
-        _ => Err(serde::ser::Error::custom("Unsupported chain"))?,
-    };
-    serializer.serialize_str(chain_str)
+/// API endpoints
+#[derive(Debug, Clone)]
+pub struct ApiUrl {
+    pub base: String,
 }
 
-/// Helper function to convert a protocol version to a string.
-fn protocol_version_to_str<S: Serializer>(
-    protocol_version: &ProtocolVersion,
-    serializer: S,
-) -> Result<S::Ok, S::Error> {
-    let protocol_version_str = match protocol_version {
-        ProtocolVersion::V1_1 => SEAPORT_V1,
-        ProtocolVersion::V1_4 => SEAPORT_V4,
-        ProtocolVersion::V1_5 => SEAPORT_V5,
-    };
-    serializer.serialize_str(protocol_version_str)
+impl ApiUrl {
+    pub fn get_listings(&self, chain: &Chain) -> String {
+        format!("{}/orders/{}/seaport/listings", self.base, chain)
+    }
+
+    pub fn get_offers(&self, chain: &Chain) -> String {
+        format!("{}/orders/{}/seaport/offers", self.base, chain)
+    }
+
+    pub fn fulfill_listing(&self) -> String {
+        format!("{}/listings/fulfillment_data", self.base)
+    }
 }
 
-/// Helper function to convert a string to bytes.
-fn bytes_from_str<'de, D>(deserializer: D) -> Result<Bytes, D::Error>
-where
-    D: de::Deserializer<'de>,
-{
-    let val = String::deserialize(deserializer)?;
-    Bytes::from_str(&val).map_err(de::Error::custom)
+/// Each of the possible chains that OpenSea supports.
+/// https://github.com/ProjectOpenSea/opensea-js/blob/813b9189221024f3761e622bb418264f002fcce5/src/types.ts#L98
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, EnumString, AsRefStr, Default)]
+#[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
+pub enum Chain {
+    // Mainnet Chains
+    #[default]
+    #[strum(to_string = "ethereum", serialize = "mainnet")]
+    #[serde(alias = "mainnet")]
+    Ethereum,
+    #[strum(to_string = "matic", serialize = "polygon")]
+    #[serde(rename = "matic", alias = "polygon")]
+    Polygon,
+    Klaytn,
+    Base,
+    BSC,
+    Arbitrum,
+    ArbitrumNova,
+    Avalanche,
+    Optimism,
+    Solana,
+    Zora,
+
+    // Testnet Chains
+    // When adding to this list, also add to the is_test_chain method
+    Goerli,
+    Sepolia,
+    Mumbai,
+    Boabab,
+    BaseGoerli,
+    BSCTestnet,
+    ArbitrumGoerli,
+    #[strum(to_string = "avalanche_fuji", serialize = "fuji")]
+    #[serde(alias = "fuji")]
+    AvalancheFuji,
+    OptimismGoerli,
+    SolanaDevnet,
+    ZoraTestnet,
 }
 
-/// Helper function to convert a decimal string to a U256.
-fn u256_from_dec_str<'de, D>(deserializer: D) -> Result<U256, D::Error>
-where
-    D: de::Deserializer<'de>,
-{
-    let val = String::deserialize(deserializer)?;
-    U256::from_dec_str(&val).map_err(de::Error::custom)
+impl fmt::Display for Chain {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.pad(self.as_ref())
+    }
+}
+
+impl Chain {
+    pub fn is_test_chain(&self) -> bool {
+        use Chain::*;
+        matches!(
+            self,
+            Goerli
+                | Sepolia
+                | Mumbai
+                | Boabab
+                | BaseGoerli
+                | BSCTestnet
+                | ArbitrumGoerli
+                | AvalancheFuji
+                | OptimismGoerli
+                | SolanaDevnet
+                | ZoraTestnet
+        )
+    }
+
+    #[inline]
+    pub fn is_live_chain(&self) -> bool {
+        !self.is_test_chain()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use serde_json::Value;
+
+    #[test]
+    fn can_display_and_parse_chain() {
+        let chain = Chain::Polygon;
+        assert_eq!(format!("{chain}"), "matic");
+
+        let chain: Chain = Default::default();
+        assert_eq!(format!("{chain}"), "ethereum");
+
+        let chain = Chain::AvalancheFuji;
+        assert_eq!(format!("{chain}"), "avalanche_fuji");
+
+        let chain: Chain = "polygon".parse().unwrap();
+        assert_eq!(chain, Chain::Polygon);
+    }
+
+    #[test]
+    fn can_serialize_chain() {
+        let chain = Chain::Polygon;
+        let value = serde_json::to_value(&chain).unwrap();
+        assert_eq!(Value::String("matic".to_string()), value);
+
+        let chain: Chain = Default::default();
+        let value = serde_json::to_value(&chain).unwrap();
+        assert_eq!(Value::String("ethereum".to_string()), value);
+    }
+
+    #[test]
+    fn can_deserialize_chain() {
+        #[derive(Deserialize)]
+        struct ChainTest {
+            chain: Chain,
+        }
+
+        let data: ChainTest = serde_json::from_str(r#"{ "chain": "matic" }"#).unwrap();
+        assert_eq!(data.chain, Chain::Polygon);
+
+        let data: ChainTest = serde_json::from_str(r#"{ "chain": "mainnet" }"#).unwrap();
+        assert_eq!(data.chain, Chain::Ethereum);
+
+        let data: ChainTest = serde_json::from_str(r#"{ "chain": "ethereum" }"#).unwrap();
+        assert_eq!(data.chain, Chain::Ethereum);
+    }
 }

@@ -4,36 +4,72 @@ use reqwest::{
 };
 
 use crate::{
-    constants::FULFILL_LISTING_URL,
-    types::{FulfillListingRequest, FulfillListingResponse, OpenSeaApiError},
+    constants::{API_BASE_MAINNET, API_BASE_TESTNET, PROTOCOL_VERSION},
+    types::{
+        api::{
+            FulfillListingRequest, FulfillListingResponse, RetrieveListingsRequest,
+            RetrieveListingsResponse,
+        },
+        ApiUrl, Chain, OpenSeaApiError,
+    },
 };
 
 //. A partial implementation of the OpenSea API v2, supporting the fulfill listing endpoint.
 #[derive(Debug, Clone)]
 pub struct OpenSeaV2Client {
     client: Client,
+    chain: Chain,
+    url: ApiUrl,
 }
 
 /// Configuration for the OpenSea API client.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct OpenSeaApiConfig {
-    pub api_key: String,
+    pub api_key: Option<String>,
+    pub chain: Chain,
 }
 
 impl OpenSeaV2Client {
     /// Create a new client with the given configuration.
     pub fn new(cfg: OpenSeaApiConfig) -> Self {
         let mut builder = ClientBuilder::new();
-
         let mut headers = HeaderMap::new();
-        headers.insert(
-            "X-API-KEY",
-            header::HeaderValue::from_str(&cfg.api_key).unwrap(),
-        );
+
+        if let Some(ref api_key) = cfg.api_key {
+            headers.insert("X-API-KEY", header::HeaderValue::from_str(api_key).unwrap());
+        }
+
         builder = builder.default_headers(headers);
         let client = builder.build().unwrap();
 
-        Self { client }
+        let base_url = if cfg.chain.is_test_chain() {
+            API_BASE_TESTNET
+        } else {
+            API_BASE_MAINNET
+        };
+
+        let base_url = format!("{base_url}/{PROTOCOL_VERSION}");
+
+        Self {
+            client,
+            chain: cfg.chain,
+            url: ApiUrl { base: base_url },
+        }
+    }
+
+    pub async fn retrieve_listings(
+        &self,
+        req: RetrieveListingsRequest,
+    ) -> Result<RetrieveListingsResponse, OpenSeaApiError> {
+        let res = self
+            .client
+            .get(self.url.get_listings(&self.chain))
+            .query(&req.to_qs_vec()?)
+            .send()
+            .await?
+            .json::<RetrieveListingsResponse>()
+            .await?;
+        Ok(res)
     }
 
     /// Call the fulfill listing endpoint, which returns the arguments necessary
@@ -44,7 +80,7 @@ impl OpenSeaV2Client {
     ) -> Result<FulfillListingResponse, OpenSeaApiError> {
         let res = self
             .client
-            .post(FULFILL_LISTING_URL)
+            .post(self.url.fulfill_listing())
             .json(&req)
             .send()
             .await?
