@@ -1,27 +1,7 @@
-use opensea_v2::{
-    types::{
-        api::{OrderOpeningOption, RetrieveListingsRequest},
-        Chain,
-    },
-    OpenSeaApiConfig, OpenSeaV2Client,
-};
+mod common;
+use common::test_client;
 
-fn test_client() -> OpenSeaV2Client {
-    let cfg = OpenSeaApiConfig {
-        chain: Chain::Goerli,
-        ..Default::default()
-    };
-
-    OpenSeaV2Client::new(cfg)
-}
-
-fn live_client() -> OpenSeaV2Client {
-    let cfg = OpenSeaApiConfig {
-        ..Default::default()
-    };
-
-    OpenSeaV2Client::new(cfg)
-}
+use opensea_v2::types::api::{OrderOpeningOption, RetrieveListingsRequest};
 
 #[tokio::test]
 async fn can_retrieve_listing() {
