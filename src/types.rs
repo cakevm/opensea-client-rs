@@ -3,6 +3,18 @@ pub mod api;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use strum::{AsRefStr, EnumString};
+use thiserror::Error;
+
+/// Error returned by the OpenSea API.
+#[derive(Debug, Error)]
+pub enum OpenSeaApiError {
+    #[error(transparent)]
+    Reqwest(#[from] reqwest::Error),
+    #[error(transparent)]
+    SerdeJson(#[from] serde_json::Error),
+    #[error("{0}")]
+    Other(String),
+}
 
 /// API endpoints
 #[derive(Debug, Clone)]

@@ -8,9 +8,8 @@ use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{Map, Value};
 use serde_with::{serde_as, skip_serializing_none, TimestampSeconds};
 use std::{collections::HashMap, fmt, str::FromStr};
-use thiserror::Error;
 
-use super::Chain;
+use super::{Chain, OpenSeaApiError};
 
 #[serde_as]
 #[skip_serializing_none]
@@ -42,12 +41,12 @@ pub struct RetrieveListingsRequest {
     pub listed_before: Option<DateTime<Utc>>,
 }
 
-pub(crate) fn value_to_string(v: &Value) -> Result<String, Box<dyn std::error::Error>> {
+pub(crate) fn value_to_string(v: &Value) -> Result<String, OpenSeaApiError> {
     match v {
         Value::Number(n) => Ok(n.to_string()),
         Value::Bool(b) => Ok(b.to_string()),
         Value::String(s) => Ok(s.to_owned()),
-        _ => Err(Box::from(format!("Can not convert value: '{v}' to String"))),
+        _ => Err(OpenSeaApiError::Other(format!("Wrong value type: {v:?}"))),
     }
 }
 
@@ -63,7 +62,7 @@ impl RetrieveListingsRequest {
     /// Converts RetrieveListingsRequest into a vector of key-value pairs
     /// OpenSea API expects arrays to be passed as a sequence of parameters with the same key (e.g. ?token_ids=1&token_ids=209)
     /// https://github.com/ProjectOpenSea/opensea-js/blob/893866a7381ec455814be2ac9943d45ee38da58f/src/api/api.ts#L673C11-L673C31
-    pub fn to_qs_vec(&self) -> Result<Vec<(String, String)>, Box<dyn std::error::Error>> {
+    pub fn to_qs_vec(&self) -> Result<Vec<(String, String)>, OpenSeaApiError> {
         let map = self.to_map()?;
         let mut vec = Vec::new();
         for (k, v) in map.iter() {
@@ -199,13 +198,6 @@ pub struct AdditionalRecipient {
     #[serde(deserialize_with = "u256_from_dec_str")]
     pub amount: U256,
     pub recipient: H160,
-}
-
-/// Error returned by the OpenSea API.
-#[derive(Debug, Error)]
-pub enum OpenSeaApiError {
-    #[error(transparent)]
-    Reqwest(#[from] reqwest::Error),
 }
 
 /// Helper function to convert a protocol version to a string.

@@ -4,13 +4,13 @@ use reqwest::{
 };
 
 use crate::{
-    constants::{API_BASE_MAINNET, API_BASE_TESTNET},
+    constants::{API_BASE_MAINNET, API_BASE_TESTNET, PROTOCOL_VERSION},
     types::{
         api::{
-            FulfillListingRequest, FulfillListingResponse, OpenSeaApiError,
-            RetrieveListingsRequest, RetrieveListingsResponse,
+            FulfillListingRequest, FulfillListingResponse, RetrieveListingsRequest,
+            RetrieveListingsResponse,
         },
-        ApiUrl, Chain,
+        ApiUrl, Chain, OpenSeaApiError,
     },
 };
 
@@ -48,12 +48,12 @@ impl OpenSeaV2Client {
             API_BASE_MAINNET
         };
 
+        let base_url = format!("{base_url}/{PROTOCOL_VERSION}");
+
         Self {
             client,
             chain: cfg.chain,
-            url: ApiUrl {
-                base: base_url.to_string(),
-            },
+            url: ApiUrl { base: base_url },
         }
     }
 
@@ -64,7 +64,7 @@ impl OpenSeaV2Client {
         let res = self
             .client
             .get(self.url.get_listings(&self.chain))
-            .query(&req)
+            .query(&req.to_qs_vec()?)
             .send()
             .await?
             .json::<RetrieveListingsResponse>()
