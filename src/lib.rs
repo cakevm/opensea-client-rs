@@ -16,3 +16,9 @@ mod constants;
 pub mod types;
 
 pub use client::{OpenSeaApiConfig, OpenSeaV2Client};
+
+//XXX Suppress false positive unused_crate_dependencies warning
+#[cfg(test)]
+mod test {
+    use tokio as _;
+}
