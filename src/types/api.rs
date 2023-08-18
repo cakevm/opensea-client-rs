@@ -11,6 +11,20 @@ use std::{collections::HashMap, fmt, str::FromStr};
 
 use super::{Chain, OpenSeaApiError};
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum OrderDirection {
+    Asc,
+    Desc,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OrderOpeningOption {
+    CreatedDate,
+    EthPrice,
+}
+
 #[serde_as]
 #[skip_serializing_none]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
@@ -29,10 +43,10 @@ pub struct RetrieveListingsRequest {
     /// How to sort the orders. Can be created_date for when they were made,
     /// or eth_price to see the lowest-priced orders first (converted to their ETH values).
     /// eth_price is only supported when asset_contract_address and token_id are also defined.
-    pub order_by: Option<String>,
+    pub order_by: Option<OrderOpeningOption>,
     /// Can be asc or desc for ascending or descending sort. For example, to see the cheapest orders,
     /// do order_direction asc and order_by eth_price.
-    pub order_direction: Option<String>,
+    pub order_direction: Option<OrderDirection>,
     /// Only show orders listed after this timestamp. Seconds since the Unix epoch.
     #[serde_as(as = "Option<TimestampSeconds<i64>>")]
     pub listed_after: Option<DateTime<Utc>>,
