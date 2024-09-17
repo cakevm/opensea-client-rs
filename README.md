@@ -1,41 +1,14 @@
-# opensea V2
-
-An unofficial implementation of the Opensea V2 API in rust
+# Opensea REST API client
+This crate provides an async client for interacting with the [Opensea REST API](https://docs.opensea.io/reference/api-overview).
 
 ## Usage
+See the [tests](./tests) directory for usage examples.
 
-Instantiate a client with an Opensea API key, and then call `fulfill_listing` with the details of the order you want to fulfill onchain. 
-
-
-```rs
-let client = OpenSeaV2Client::new(OpenSeaApiConfig { api_key });
-
-let req = FulfillListingRequest {
-    listing: Listing {
-        hash: H256::from_str(
-            "0xce83ef67f520d74d081aa4da9588ee6743d3aa64caff98a7dddf214e10469929",
-        )
-        .unwrap(),
-        chain: Chain::Mainnet,
-        protocol_version: ProtocolVersion::V1_4,
-    },
-    fulfiller: Fulfiller {
-        address: H160::from_str("0xD77F375A33b1109e82f3C46A30537F1E019708eB").unwrap(),
-    },
-};
-let resp = client.fulfill_listing(req).await;
-println!("{:?}", resp);
-```
-
-
-## Building & testing
-
-```
-cargo check
-cargo test
-cargo build [--release]
-```
+# Features
+This client is compatible with the Opensea API v1.6.
 
 ## Acknowledgements
+Based on [opensea2-rs](https://github.com/0xZerohero/opensea2-rs) which is a fork of [opensea-rs bindings](https://github.com/gakonst/opensea-rs). Thank you for your work.
 
-Based on the original [opensea-rs bindings](https://github.com/gakonst/opensea-rs) written by [gakonst](https://twitter.com/gakonst).
+# License
+The original project did not include a licence. The fork stated in the `Cargo.toml` it is MIT or Apache-2.0. All code I contributed is licensed under the [Apache 2.0](./LICENSE).

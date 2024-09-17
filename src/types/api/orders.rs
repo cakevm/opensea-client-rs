@@ -1,8 +1,46 @@
-use serde::{Deserialize, Serialize};
+use crate::types::Chain;
+use chrono::{DateTime, Utc};
+use serde::{de, de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use serde_repr::{Deserialize_repr, Serialize_repr};
+use serde_with::{serde_as, TimestampSeconds};
+use std::fmt;
 
 use super::{Account, Bundle};
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum Currency {
+    Eth,
+    #[serde(untagged)]
+    Other(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Price {
+    pub currency: Currency,
+    pub decimals: u16,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BasicListingPrice {
+    pub current: Price,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ItemListing {
+    /// The hash of the order.
+    pub order_hash: String,
+    pub chain: Chain,
+    #[serde(rename = "type")]
+    pub order_type: OrderType,
+    pub price: BasicListingPrice,
+    /// The protocol data for the order. Only 'seaport' is currently supported.
+    pub protocol_data: SeaportProtocolData,
+    /// The contract address of the protocol.
+    pub protocol_address: Option<String>,
+}
 
 /// The latest OpenSea Order schema.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -48,9 +86,12 @@ pub struct Order {
     pub client_signature: Option<String>,
     pub relay_id: String,
     pub criteria_proof: Option<String>,
+
     /// Bundle of assets from the maker.
+    #[deprecated()]
     pub maker_asset_bundle: Bundle,
     /// Bundle of assets from the taker.
+    #[deprecated()]
     pub taker_asset_bundle: Bundle,
 }
 
@@ -98,22 +139,85 @@ pub struct SeaportProtocolData {
     pub signature: Value,
 }
 
+#[serde_as]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SeaportOrderParameters {
     pub offerer: String,
     pub offer: Vec<Offer>,
     pub consideration: Vec<Consideration>,
-    /// XXX deserialize to chrono::DateTime ?
-    pub start_time: String,
-    pub end_time: String,
+    #[serde_as(as = "TimestampSeconds<String>")]
+    pub start_time: DateTime<Utc>,
+    #[serde_as(as = "TimestampSeconds<String>")]
+    pub end_time: DateTime<Utc>,
     pub order_type: ProtocolOrderType,
     pub zone: String,
     pub zone_hash: String,
     pub salt: String,
     pub conduit_key: String,
     pub total_original_consideration_items: u64,
-    pub counter: u64,
+    #[serde(deserialize_with = "Counter::deserialize")]
+    pub counter: Counter,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Counter {
+    Number(u64),
+    Text(String),
+}
+
+// Implementing Deserialize for Counter
+impl<'de> Deserialize<'de> for Counter {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct CounterVisitor;
+
+        impl<'de> Visitor<'de> for CounterVisitor {
+            type Value = Counter;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("a u64 or a string")
+            }
+
+            fn visit_u64<E>(self, value: u64) -> Result<Counter, E>
+            where
+                E: de::Error,
+            {
+                Ok(Counter::Number(value))
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Counter, E>
+            where
+                E: de::Error,
+            {
+                Ok(Counter::Text(value.to_owned()))
+            }
+
+            fn visit_string<E>(self, value: String) -> Result<Counter, E>
+            where
+                E: de::Error,
+            {
+                Ok(Counter::Text(value))
+            }
+        }
+
+        deserializer.deserialize_any(CounterVisitor)
+    }
+}
+
+// Implementing Serialize for Counter
+impl Serialize for Counter {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match *self {
+            Counter::Number(ref num) => serializer.serialize_u64(*num),
+            Counter::Text(ref text) => serializer.serialize_str(text),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

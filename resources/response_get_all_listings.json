@@ -1,0 +1,60 @@
+{
+  "listings": [
+    {
+      "order_hash": "0x541a9eb3962494caffeda36a495cc978c7ecc21c6b714aaabc678187d3da9ac7",
+      "chain": "ethereum",
+      "type": "basic",
+      "price": {
+        "current": {
+          "currency": "USD",
+          "decimals": 18,
+          "value": "25000000000000000000"
+        }
+      },
+      "protocol_data": {
+        "parameters": {
+          "offerer": "0x67d58520775af7848f3ee2adaa227435f5a91a04",
+          "offer": [
+            {
+              "itemType": 2,
+              "token": "0x23581767a106ae21c074b2276D25e5C3e136a68b",
+              "identifierOrCriteria": "4655",
+              "startAmount": "1",
+              "endAmount": "1"
+            }
+          ],
+          "consideration": [
+            {
+              "itemType": 0,
+              "token": "0x0000000000000000000000000000000000000000",
+              "identifierOrCriteria": "0",
+              "startAmount": "24375000000000000000",
+              "endAmount": "24375000000000000000",
+              "recipient": "0x67d58520775Af7848F3EE2Adaa227435F5a91A04"
+            },
+            {
+              "itemType": 0,
+              "token": "0x0000000000000000000000000000000000000000",
+              "identifierOrCriteria": "0",
+              "startAmount": "625000000000000000",
+              "endAmount": "625000000000000000",
+              "recipient": "0x0000a26b00c1F0DF003000390027140000fAa719"
+            }
+          ],
+          "startTime": "1698555026",
+          "endTime": "1714366221",
+          "orderType": 0,
+          "zone": "0x004C00500000aD104D7DBd00e3ae0A5C00560C00",
+          "zoneHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "salt": "0x360c6ebe0000000000000000000000000000000000000000cb638a962bb549ab",
+          "conduitKey": "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000",
+          "totalOriginalConsiderationItems": 2,
+          "counter": 0
+        },
+        "signature": null
+      },
+      "protocol_address": "0x00000000000000adc04c56bf30ac9d3c0aaf14dc"
+    }
+  ],
+  "next": "cGs9MTgxNjUwNzYwODMmY3JlYXRlZF9kYXRlPTIwMjQtMDQtMDgrMDklM0ExOSUzQTA4LjQ1OTU2OA=="
+}

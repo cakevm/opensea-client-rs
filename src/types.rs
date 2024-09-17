@@ -1,5 +1,6 @@
 pub mod api;
 
+use crate::types::api::{OpenSeaDetailedErrorCode, OpenSeaErrorResponse};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use strum::{AsRefStr, EnumString};
@@ -12,6 +13,10 @@ pub enum OpenSeaApiError {
     Reqwest(#[from] reqwest::Error),
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
+    #[error(transparent)]
+    OpenSeaError(#[from] OpenSeaErrorResponse),
+    #[error(transparent)]
+    OpenSeaDetailedError(#[from] OpenSeaDetailedErrorCode),
     #[error("{0}")]
     Other(String),
 }
@@ -33,6 +38,18 @@ impl ApiUrl {
 
     pub fn fulfill_listing(&self) -> String {
         format!("{}/listings/fulfillment_data", self.base)
+    }
+
+    pub fn get_collection(&self, collection_slug: String) -> String {
+        format!("{}/collections/{}", self.base, collection_slug)
+    }
+    pub fn get_all_listings(&self, collection_slug: String, query_parameters: String) -> String {
+        let url = format!("{}/listings/collection/{}/all", self.base, collection_slug);
+        if query_parameters.is_empty() {
+            url
+        } else {
+            format!("{}?{}", url, query_parameters)
+        }
     }
 }
 
@@ -131,11 +148,11 @@ mod test {
     #[test]
     fn can_serialize_chain() {
         let chain = Chain::Polygon;
-        let value = serde_json::to_value(&chain).unwrap();
+        let value = serde_json::to_value(chain).unwrap();
         assert_eq!(Value::String("matic".to_string()), value);
 
         let chain: Chain = Default::default();
-        let value = serde_json::to_value(&chain).unwrap();
+        let value = serde_json::to_value(chain).unwrap();
         assert_eq!(Value::String("ethereum".to_string()), value);
     }
 

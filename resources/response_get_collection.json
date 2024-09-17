@@ -1,0 +1,47 @@
+{
+  "collection": "sheboshis",
+  "name": "Sheboshis",
+  "description": "SHEboshis are 20000 lovely Shiba Inu generated NFTs. Another step in Shiba Inu's innovation journey, they are an experimental test enabled by the DN404 standard.\nTheir story began with the birth of their male partners, SHIBOSHIS. They waited for them, and now they are here. SHEboshis came to spread love. Join the mission.",
+  "image_url": "https://i.seadn.io/s/raw/files/696b947d650d031f1ee481ab561f5161.jpg?w=500&auto=format",
+  "banner_image_url": "",
+  "owner": "0xc7d0445ac2947760b3dd388b8586adf079972bf3",
+  "safelist_status": "disabled_top_trending",
+  "category": "pfps",
+  "is_disabled": false,
+  "is_nsfw": false,
+  "trait_offers_enabled": false,
+  "collection_offers_enabled": true,
+  "opensea_url": "https://opensea.io/collection/sheboshis",
+  "project_url": "",
+  "wiki_url": "",
+  "discord_url": "",
+  "telegram_url": "",
+  "twitter_username": "sheboshis",
+  "instagram_username": "",
+  "contracts":
+  [
+    {
+      "address": "0x7b463415d67b013d5f1106fd3df048973bc214dd",
+      "chain": "ethereum"
+    }
+  ],
+  "editors":
+  [
+    "0xc7d0445ac2947760b3dd388b8586adf079972bf3"
+  ],
+  "fees":
+  [
+    {
+      "fee": 2.5,
+      "recipient": "0x0000a26b00c1f0df003000390027140000faa719",
+      "required": true
+    },
+    {
+      "fee": 5.0,
+      "recipient": "0xc7d0445ac2947760b3dd388b8586adf079972bf3",
+      "required": false
+    }
+  ],
+  "total_supply": 18011,
+  "created_date": "2024-02-20"
+}
