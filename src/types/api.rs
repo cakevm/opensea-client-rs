@@ -576,7 +576,7 @@ pub(crate) mod tests {
         let res = std::fs::read_to_string(d).unwrap();
         let res: CollectionResponse = serde_json::from_str(&res).unwrap();
         assert_eq!(res.name, "Sheboshis");
-        assert_eq!(res.created_date, NaiveDate::from_ymd_opt(2024, 02, 20).unwrap());
+        assert_eq!(res.created_date, NaiveDate::from_ymd_opt(2024, 2, 20).unwrap());
     }
 
     #[test]

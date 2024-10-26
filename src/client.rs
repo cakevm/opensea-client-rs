@@ -141,9 +141,9 @@ mod tests {
             res.listings.first().unwrap().protocol_data.parameters.start_time,
             DateTime::parse_from_rfc3339("2023-10-29T04:50:26Z").unwrap()
         );
-        assert_eq!(res.listings.get(0).unwrap().price.current.value, "25000000000000000000");
-        assert_eq!(res.listings.get(0).unwrap().protocol_data.parameters.counter, Counter::Number(0));
-        assert_eq!(res.listings.get(0).unwrap().price.current.currency, Currency::Other("USD".to_string()));
+        assert_eq!(res.listings.first().unwrap().price.current.value, "25000000000000000000");
+        assert_eq!(res.listings.first().unwrap().protocol_data.parameters.counter, Counter::Number(0));
+        assert_eq!(res.listings.first().unwrap().price.current.currency, Currency::Other("USD".to_string()));
     }
 
     #[test]
